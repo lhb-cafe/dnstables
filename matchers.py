@@ -47,7 +47,7 @@ class OrMatcher(DNSTMatcher):
     matcher0: DNSTMatcher
     matcher1: DNSTMatcher
     def _match(self, query, **kwargs):
-        return self.matcher0.match(**kwargs) or self.matcher1.match(**kwargs)
+        return self.matcher0.match(query, **kwargs) or self.matcher1.match(query, **kwargs)
 
     def __str__(self):
         return f"{self.matcher0} or {self.matcher1}"
