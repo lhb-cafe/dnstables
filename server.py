@@ -1,17 +1,19 @@
 import asyncio
 import os
 import signal
+import argparse
+import ipaddress
 from dnslib import DNSRecord, RR, QTYPE, A, RCODE
 from dnst_engine import cmd
 from dnst_core import DNSTables, DNSTQuery, log
 from utils.cache import DNSTCache
 
-DNS_PORT = 53
+args = None
 CMD_SOCKET_PATH = "/tmp/nftabels.sock"
 
 default_cmds = [
     "add chain preresolve",
-    "add rule preresolve qname *.google.com verbose info",
+    "add rule preresolve qname *.google.com verbose debug",
     "add rule preresolve qname *.baidu.com verbose info",
     "add rule preresolve cachecheck",
     "add rule preresolve hasanswer return",
@@ -22,11 +24,11 @@ default_cmds = [
     "add rule multiplexer qname *.google.com jump resolve_fakeip",
 
     "add chain resolve",
-    "add rule resolve resolvefile /etc/hostname",
+    "add rule resolve resolvefile /etc/hosts",
     "add rule resolve forward 8.8.8.8 cache return",
 
     "add chain resolve_fakeip",
-    "add rule resolve_fakeip resolvefile /etc/hostname",
+    "add rule resolve_fakeip resolvefile /etc/hosts",
     "add rule resolve_fakeip forward 8.8.8.8 fakeip 198.19.0.0/16 cache return",
 ]
 
@@ -79,7 +81,7 @@ async def handle_dns_query(data, addr, sock):
 class DNSDatagramProtocol:
     def connection_made(self, sock):
         self.sock = sock
-        print(f"DNS Server is listening on UDP/{DNS_PORT}")
+        print(f"DNS Server is listening on UDP/{args.listen}:{args.port}")
 
     def connection_lost(self, exc):
         print(f"Connection lost: {exc}")
@@ -106,10 +108,19 @@ async def handle_cmd(reader, writer):
 
 
 async def main():
-    print("Starting Fake-IP DNS proxy server...")
-    for c in default_cmds:
-        cmd(c)
-    print(DNSTables.get_instance())
+    print("Starting DNSTables server...")
+    if args.rulefile != None:
+        with open(args.rulefile, "r") as f:
+            for line  in f:
+                line = line.strip() # remove leading spaces
+                if not line or line.startswith("#"): # skip comments
+                    continue
+                err = cmd(line)
+                if err != None:
+                    print(f"error while parsing rulefile {arg.rulefile}: {err}")
+                    return
+    else:
+        print("No rulefile specified.")
 
     # background cache cleanup task scheduled about every second
     #asyncio.create_task(DNSTCache.get_instance().cleanup_cache_periodically(period=1))
@@ -118,7 +129,7 @@ async def main():
     loop = asyncio.get_event_loop()
     transport, protocol = await loop.create_datagram_endpoint(
         lambda: DNSDatagramProtocol(),
-        local_addr=('127.0.0.1', DNS_PORT)
+        local_addr=(args.listen, args.port)
     )
 
     # daemon to adjust nftables
@@ -144,5 +155,30 @@ async def main():
         os.remove(CMD_SOCKET_PATH)
 
 
+def valid_ip(value):
+    try:
+        ip = ipaddress.IPv4Address(value)
+        return str(ip)
+    except ipaddress.AddressValueError:
+        raise argparse.ArgumentTypeError(f"Invalid IPv4 address: {value}")
+
+
+def valid_port(value):
+    ivalue = int(value)
+    if not (0 < ivalue < 65536):
+        raise argparse.ArgumentTypeError(f"Port must be between 1 and 65535, got {value}")
+    return ivalue
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--listen", type=valid_ip, help="Listen address for DNS queries", default="0.0.0.0")
+    parser.add_argument("--port", type=valid_port, help="Listen port for DNS queries", default=53)
+    parser.add_argument("--verbose", type=str, help="Default verbose level for query tracer", choices=["none", "err", "warn", "info", "debug"], default="warn")
+    parser.add_argument("--rulefile", type=str, default=None)
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
+    args = parse_args()
     asyncio.run(main())
