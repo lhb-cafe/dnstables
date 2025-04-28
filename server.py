@@ -1,10 +1,13 @@
 import asyncio
+import os
+import signal
 from dnslib import DNSRecord, RR, QTYPE, A, RCODE
 from dnst_engine import cmd
-from dnst_core import DNSTables, DNSTQuery
+from dnst_core import DNSTables, DNSTQuery, log
 from utils.cache import DNSTCache
 
 DNS_PORT = 53
+CMD_SOCKET_PATH = "/tmp/nftabels.sock"
 
 default_cmds = [
     "add chain preresolve",
@@ -85,6 +88,23 @@ class DNSDatagramProtocol:
         asyncio.ensure_future(handle_dns_query(data, addr, self.sock))
 
 
+async def handle_cmd(reader, writer):
+    data = await reader.read(1024)
+    cmd_str = data.decode()
+
+    if cmd_str == "list":
+        ret = str(DNSTables.get_instance())
+    else:
+        ret = cmd(cmd_str)
+
+    if ret == None:
+        ret = "ok"
+    writer.write(ret.encode())
+    await writer.drain()
+    writer.close()
+    await writer.wait_closed()
+
+
 async def main():
     print("Starting Fake-IP DNS proxy server...")
     for c in default_cmds:
@@ -101,13 +121,28 @@ async def main():
         local_addr=('127.0.0.1', DNS_PORT)
     )
 
-    try:
-        await asyncio.sleep(3600)  # Run for 1 hour
-    finally:
-        transport.close()
+    # daemon to adjust nftables
+    if os.path.exists(CMD_SOCKET_PATH):
+        os.remove(CMD_SOCKET_PATH)
+    daemon = await asyncio.start_unix_server(handle_cmd, path=CMD_SOCKET_PATH)
+
+    # Shutdown handler
+    stop_event = asyncio.Event()
+    def handle_shutdown():
+        print("Shutdown requested...")
+        stop_event.set()
+
+    loop.add_signal_handler(signal.SIGINT, handle_shutdown)
+    loop.add_signal_handler(signal.SIGTERM, handle_shutdown)
+    async with daemon:
+        await stop_event.wait()
+
+    # cleanup
+    print("Daemon stopped")
+    transport.close()
+    if os.path.exists(CMD_SOCKET_PATH):
+        os.remove(CMD_SOCKET_PATH)
 
 
 if __name__ == "__main__":
-    # asyncio.run(main())
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
+    asyncio.run(main())

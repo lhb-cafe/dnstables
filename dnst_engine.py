@@ -186,13 +186,11 @@ def add_del_chain(is_add, cmd):
 def cmd(cmd_str):
     cmd = cmd_str.replace(',', '').split() # remove commas and split by space
     if len(cmd) == 0:
-        return 0
+        return None
     if len(cmd) < 3:
-        print("command too short")
-        return -1
+        return "command too short"
     elif cmd[0] not in ["add", "delete"]:
-        print("unknown command")
-        return -1
+        return "unknown command"
 
     is_add = cmd.pop(0) == "add"
     ret = 0
@@ -208,32 +206,8 @@ def cmd(cmd_str):
         cmd.pop(0)
         ret = add_del_chain(is_add, cmd)
     else:
-        print(f"unknown keyword {cmd[0]}")
-        return -1
+        return f"unknown keyword {cmd[0]}"
 
     if ret != 0:
-        print(f"failed to run command: {cmd_str}")
-        return ret
-    return 0
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        return f"failed to run command: {cmd_str}"
+    return None
