@@ -63,17 +63,16 @@ class DNSTQuery:
 
 class Trace():
     verbose_lvl = {
-    "err"   : 0,
-    "warn"  : 1,
-    "info"  : 2,
-    "debug" : 3,
-    "none"  : 4,
-    "test"  : 5,
+        "debug" : 0,
+        "info"  : 1,
+        "warn"  : 2,
+        "err"   : 3,
+        "none"  : 4,
     }
     tracer_name = None
 
     def _trace(self, lvl, query, msg):
-        if query.verbose >= self.verbose_lvl[lvl]:
+        if self.verbose_lvl[lvl] >= query.verbose:
             if callable(msg):
                 # ugly way to delay expensive evaluation of msg until needed
                 # easiest solution is to put an lambda before the string
