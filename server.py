@@ -11,27 +11,6 @@ from utils.cache import DNSTCache
 args = None
 CMD_SOCKET_PATH = "/tmp/nftabels.sock"
 
-default_cmds = [
-    "add chain preresolve",
-    "add rule preresolve qname *.google.com verbose debug",
-    "add rule preresolve qname *.baidu.com verbose info",
-    "add rule preresolve cachecheck",
-    "add rule preresolve hasanswer return",
-
-    "add chain multiplexer",
-    "add rule multiplexer cachecheck",
-    "add rule multiplexer hasanswer return",
-    "add rule multiplexer qname *.google.com jump resolve_fakeip",
-
-    "add chain resolve",
-    "add rule resolve resolvefile /etc/hosts",
-    "add rule resolve forward 8.8.8.8 cache return",
-
-    "add chain resolve_fakeip",
-    "add rule resolve_fakeip resolvefile /etc/hosts",
-    "add rule resolve_fakeip forward 8.8.8.8 fakeip 198.19.0.0/16 cache return",
-]
-
 def extract_query_info(query_data):
     try:
         request = DNSRecord.parse(query_data)
@@ -54,7 +33,6 @@ async def handle_dns_query(data, addr, sock):
         reply.header.rcode = RCODE.NXDOMAIN
         sock.sendto(reply.pack(), addr)
         return
-    print(f"{qname} {qtype}")
 
     # feed into dnstables
     dnst_query = DNSTQuery(
