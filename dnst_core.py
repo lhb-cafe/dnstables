@@ -179,11 +179,11 @@ class DNSTables(Trace.with_name("tables")):
             lines.extend([f"{k} : {v}" for k, v in target.items()])
             lines.append("}\n")
         # print rules
-        for hook in self.hooks:
+        for hook_index, hook in enumerate(self.hooks):
             rulechain = self.chains[hook]
-            lines.append(f"chain {hook} {{")
+            lines.append(f"chain [{hook_index}] {hook} {{")
             for index, rule in enumerate(rulechain):
-                lines.append(f"\t{rule} index {index}")
+                lines.append(f"\t[{index}] {rule}")
             lines.append("}\n")
         return "\n".join(lines)
 
