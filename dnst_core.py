@@ -1,5 +1,6 @@
 import asyncio
 import copy
+import datetime
 from dataclasses import dataclass, asdict, field
 
 class DNSTLogger:
@@ -28,7 +29,8 @@ class DNSTLogger:
 
 
 async def log(msg):
-    await DNSTLogger.get_instance().aprint(msg)
+    timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    await DNSTLogger.get_instance().aprint(f"[{timestamp}] msg")
 
 
 @dataclass
@@ -38,7 +40,7 @@ class DNSTQuery:
     qname: str
     qtype: str
     raw_query: bytes
-    verbose: int = 0
+    verbose: int
     trace_logs: list = field(default_factory=list)
     answer: list = field(default_factory=list)
 
@@ -49,11 +51,9 @@ class DNSTQuery:
         if len(self.trace_logs) == 0:
             return
 
-        msgs = ""
-        for msg in self.trace_logs:
-            msgs += f"[TRACE] {msg}\n"
-        if len(msgs) > 0:
-            await log(msgs[:-1]) # strip the last '\n'
+        if len(self.trace_logs) > 0:
+            msg = "\n".join(self.trace_logs)
+            await DNSTLogger.get_instance().aprint(msg)
         self.trace_logs = []
 
     def has_answer(self):
@@ -82,7 +82,9 @@ class Trace():
                 #                           if expensive_check(word) == True
                 # ]))
                 msg = msg()
-            query.trace_logs.append(f"level={lvl}\ttracer={self.tracer_name}\t{self.msg_decor(msg)}")
+
+            timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            query.trace_logs.append(f"[{timestamp}] level={lvl}\ttracer={self.tracer_name}\t{self.msg_decor(msg)}")
 
     # tracers can overwrite this to decorate their own msg
     def msg_decor(self, msg):

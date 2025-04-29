@@ -15,7 +15,7 @@ class DNSTAction(Trace.with_name("action")):
         return f"{self.action_str} {action_args}"
 
     def msg_decor(self, msg):
-        return f"action={self.action_str} msg=\"{msg}\""
+        return f"action={self.action_str}\tmsg=\"{msg}\""
 
     async def act(self, **kwargs):
         return None
@@ -72,7 +72,7 @@ class VerboseAction(DNSTAction):
             
         if self.verbose_int != None:
             query.set_verbose(self.verbose_int)
-            self.info(query, f"setting verbose level to {self.verbose_str}")
+            self.debug(query, f"verbose level set to {self.verbose_str}")
         return None
 
 

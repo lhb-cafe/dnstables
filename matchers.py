@@ -16,7 +16,7 @@ class DNSTMatcher(Trace.with_name("matcher")):
         return True # match everything
 
     def msg_decor(self, msg):
-        return f"matcher=\"{self}\" msg=\"{msg}\""
+        return f"matcher=\"{self}\"\tmsg=\"{msg}\""
 
     def __str__(self):
         return ""

@@ -5,7 +5,7 @@ import argparse
 import ipaddress
 from dnslib import DNSRecord, RR, QTYPE, A, RCODE
 from dnst_engine import cmd
-from dnst_core import DNSTables, DNSTQuery, log
+from dnst_core import DNSTables, DNSTQuery, log, Trace
 from utils.cache import DNSTCache
 
 args = None
@@ -40,7 +40,8 @@ async def handle_dns_query(data, addr, sock):
             src_port = addr[1],
             qname = qname,
             qtype = qtype,
-            raw_query = data
+            raw_query = data,
+            verbose = Trace.verbose_lvl[args.verbose],
     )
     ret = await DNSTables.get_instance().feed(dnst_query)
     if ret == "drop":
