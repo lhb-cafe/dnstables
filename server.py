@@ -1,5 +1,6 @@
 import asyncio
 import os
+import sys
 import signal
 import argparse
 import ipaddress
@@ -87,7 +88,18 @@ async def handle_cmd(reader, writer):
 
 
 async def main():
-    print("Starting DNSTables server...")
+    # redirect to log file
+    f = None
+    if args.logfile != None:
+        try:
+            f = open(args.logfile, "a")
+            sys.stdout = f
+            sys.stderr = f
+        except Exception as e:
+            await log(f"Error opening or writing to file: {e}")
+            exit(1)
+
+    await log("Starting DNSTables server...")
     if args.rulefile != None:
         with open(args.rulefile, "r") as f:
             for line  in f:
@@ -99,7 +111,7 @@ async def main():
                     print(f"error while parsing rulefile {arg.rulefile}: {err}")
                     return
     else:
-        print("No rulefile specified.")
+        await log("No rulefile specified.")
 
     # background cache cleanup task scheduled about every second
     #asyncio.create_task(DNSTCache.get_instance().cleanup_cache_periodically(period=1))
@@ -118,20 +130,25 @@ async def main():
 
     # Shutdown handler
     stop_event = asyncio.Event()
-    def handle_shutdown():
-        print("Shutdown requested...")
+    async def handle_shutdown(signal):
+        await log("Shutdown requested...")
         stop_event.set()
 
-    loop.add_signal_handler(signal.SIGINT, handle_shutdown)
-    loop.add_signal_handler(signal.SIGTERM, handle_shutdown)
+    for sig in [signal.SIGTERM, signal.SIGINT]:
+        loop.add_signal_handler(
+            sig,
+            lambda s=sig: asyncio.create_task(handle_shutdown(s))
+        )
     async with daemon:
         await stop_event.wait()
 
     # cleanup
-    print("Daemon stopped")
+    await log("Daemon stopped")
     transport.close()
     if os.path.exists(CMD_SOCKET_PATH):
         os.remove(CMD_SOCKET_PATH)
+    if f != None:
+        f.close()
 
 
 def valid_ip(value):
@@ -155,6 +172,7 @@ def parse_args():
     parser.add_argument("--port", type=valid_port, help="Listen port for DNS queries", default=53)
     parser.add_argument("--verbose", type=str, help="Default verbose level for query tracer", choices=["none", "err", "warn", "info", "debug"], default="warn")
     parser.add_argument("--rulefile", type=str, default=None)
+    parser.add_argument("--logfile", type=str, default=None)
     return parser.parse_args()
 
 

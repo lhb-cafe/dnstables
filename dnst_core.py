@@ -1,6 +1,7 @@
 import asyncio
 import copy
 import datetime
+import sys
 from dataclasses import dataclass, asdict, field
 
 class DNSTLogger:
@@ -22,6 +23,7 @@ class DNSTLogger:
             if msg is None:
                 break
             print(msg)
+            sys.stdout.flush()
             self._queue.task_done()
 
     async def aprint(self, msg):
@@ -30,7 +32,7 @@ class DNSTLogger:
 
 async def log(msg):
     timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    await DNSTLogger.get_instance().aprint(f"[{timestamp}] msg")
+    await DNSTLogger.get_instance().aprint(f"[{timestamp}] {msg}")
 
 
 @dataclass
