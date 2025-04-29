@@ -108,7 +108,7 @@ async def main():
                     continue
                 err = cmd(line)
                 if err != None:
-                    print(f"error while parsing rulefile {arg.rulefile}: {err}")
+                    print(f"error while parsing rulefile {args.rulefile}: {err}")
                     return
     else:
         await log("No rulefile specified.")

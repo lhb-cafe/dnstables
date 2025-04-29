@@ -2,7 +2,7 @@ from dnst_core import DNSTRule, DNSTables
 from matchers import DNSTMatcherBuilder, OrMatcher
 from actions import DNSTActionBuilder
 
-def add_del_set(is_add, cmd):
+def add_del_set_map(is_add, cmd):
     #TODO: specify element types during set/map declaration
     if len(cmd) != 2 or cmd[0] not in ["set", "map"]:
         print("invalid add/delete set/map syntax")
@@ -17,7 +17,7 @@ def add_del_set(is_add, cmd):
         elif not is_map and name not in dnstables.sets:
             dnstables.sets[name] = set()
     else:
-        if is_map and name not in dnstables.maps or not is_mapp and name not in dnstables.sets:
+        if is_map and name not in dnstables.maps or not is_map and name not in dnstables.sets:
             print(f"unable to find {name} with type {cmd[0]}")
             return -1
         if is_map:
@@ -35,13 +35,14 @@ def add_del_element(is_add, cmd):
     cmd.pop(-1)
     dnstables = DNSTables.get_instance()
 
+    is_map = False
     if len(cmd) > 1 and cmd[1] == ":":
         is_map = True
         if len(cmd) % 3 != 0: # key0 : val0 key1 : val1 ... keyN : valN
             print("invalid add element (to maps) syntax")
             return -1
 
-    if is_map and name not in dnstables.maps or not is_mapp and name not in dnstables.sets:
+    if is_map and name not in dnstables.maps or not is_map and name not in dnstables.sets:
          print(f"unable to find {name} with type {cmd[0]}")
          return -1
 
