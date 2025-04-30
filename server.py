@@ -9,6 +9,7 @@ from dnst_engine import cmd
 from dnst_core import DNSTables, DNSTQuery, log, Trace
 from utils.cache import DNSTCache
 
+
 args = None
 CMD_SOCKET_PATH = "/tmp/nftabels.sock"
 
@@ -99,6 +100,15 @@ async def main():
             await log(f"Error opening or writing to file: {e}")
             exit(1)
 
+    nft = None
+    try:
+        from utils.nft_wrapper import NftWrapper
+        # flush any fake ip map
+        nft = NftWrapper.get_instance()
+        nft.flush()
+    except Exception as e:
+        await log(f"Warning: failed to initialize nftables: {e}")
+
     await log("Starting DNSTables server...")
     if args.rulefile != None:
         with open(args.rulefile, "r") as f:
@@ -149,6 +159,8 @@ async def main():
         os.remove(CMD_SOCKET_PATH)
     if f != None:
         f.close()
+    if nft != None:
+        nft.flush()
 
 
 def valid_ip(value):

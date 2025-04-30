@@ -16,8 +16,9 @@ class FakeIP:
 
 
 class FakeIPPool:
+    nft = NftWrapper.get_instance()
+
     def __init__(self, net):
-        self.nft = NftWrapper()
         self.network = ipaddress.IPv4Network(net)
         self.gen_pool = (str(ip) for ip in self.network.hosts()
                      if ip.packed[-1] not in (0, 255))
@@ -73,7 +74,6 @@ class FakeIPPool:
                 return
         self.domain_to_fake_ip.pop(domain)
         fip.domains.remove(domain)
-        print(f"unregistered ip mapping: {fip.fake_ip} -> {domain}({fip.real_ip})")
         if fip.is_free():
             self.nft.delete(fip.fake_ip)
             self.recycled_pool.append(fip.fake_ip)

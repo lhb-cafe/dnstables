@@ -7,6 +7,14 @@ hooks = ["prerouting", "output"]
 map_name = "fake_ip_map"
 
 class NftWrapper:
+    _instance = None
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance == None:
+            cls._instance = cls()
+        return cls._instance
+
     def __init__(self):
         self.nft = Nftables()
 
