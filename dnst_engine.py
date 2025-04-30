@@ -28,7 +28,7 @@ def add_del_set_map(is_add, cmd):
 
 def add_del_element(is_add, cmd):
     if len(cmd) < 3 or cmd[1] != "{" or cmd[-1] != "}":
-        print("invalid add element syntax")
+        print("invalid add/delete element syntax")
         return -1
     name = cmd.pop(0)
     cmd.pop(0)
@@ -36,18 +36,17 @@ def add_del_element(is_add, cmd):
     dnstables = DNSTables.get_instance()
 
     is_map = False
-    if len(cmd) > 1 and cmd[1] == ":":
+    target = None
+    if name in dnstables.maps:
         is_map = True
-        if len(cmd) % 3 != 0: # key0 : val0 key1 : val1 ... keyN : valN
-            print("invalid add element (to maps) syntax")
-            return -1
-
-    if is_map and name not in dnstables.maps or not is_map and name not in dnstables.sets:
-         print(f"unable to find {name} with type {cmd[0]}")
+        target = dnstables.maps[name]
+    elif name in dnstables.sets:
+        target = dnstables.sets[name]
+    else:
+         print(f"unable to find set/map: {name}")
          return -1
 
     if is_map: # map
-        target = dnstables.maps[name]
         if is_add:
             i = 0
             while i < len(cmd):
@@ -61,12 +60,11 @@ def add_del_element(is_add, cmd):
                 target.pop(key, None)
 
     else: # set
-        target = dnstables.sets[name]
         if is_add:
             target.update(cmd)
         else:
             for item in cmd:
-                target.discard(entry)
+                target.discard(item)
 
     return 0
 

@@ -171,12 +171,12 @@ class DNSTables(Trace.with_name("tables")):
         # print sets
         for name, target in self.sets.items():
             lines.append(f"set {name} {{")
-            lines.extend(target)
+            lines.extend([f"\t{item}" for item in target])
             lines.append("}\n")
         # print maps
         for name, target in self.maps.items():
             lines.append(f"map {name} {{")
-            lines.extend([f"{k} : {v}" for k, v in target.items()])
+            lines.extend([f"\t{k} : {v}" for k, v in target.items()])
             lines.append("}\n")
         # print rules
         for hook_index, hook in enumerate(self.hooks):
