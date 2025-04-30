@@ -21,15 +21,15 @@ class DNSTAction(Trace.with_name("action")):
         return None
 
 
-# break from the current rule chain
+# return from the current rule chain
 @dataclass
-class BreakAction(DNSTAction):
+class ReturnAction(DNSTAction):
     pass
 
 
-# return from DNSTables.feed()
+# reply from DNSTables
 @dataclass
-class ReturnAction(DNSTAction):
+class ReplyAction(DNSTAction):
     pass
 
 
@@ -240,7 +240,7 @@ class DNSTActionBuilder():
     action_to_ctor = {
         # name : (Class_Ctor, Num_Ctor_Args)
         "dummy":    (DNSTAction, 0),
-        "break":    (BreakAction, 0),
+        "reply":    (ReplyAction, 0),
         "return":   (ReturnAction, 0),
         "drop":     (DropAction, 0),
         "jump":     (JumpAction, 1),

@@ -138,7 +138,7 @@ class DNSTRule(Trace.with_name("rule")):
         if matched:
             self.debug(query, f"query matched: qname={query.qname}, src={query.src}:{query.src_port}")
             for action in self.actions:
-                if action.action_str in ["break", "return", "drop"]:
+                if action.action_str in ["return", "reply", "drop"]:
                     ret = action.action_str
                     break
                 ret = await action.act(query = query, **asdict(query))
@@ -203,10 +203,10 @@ class DNSTables(Trace.with_name("tables")):
                 err = await rule.apply(query)
                 if err == None:
                     continue
-                elif err == "break":
+                elif err == "return":
                     # exit the current rule chain
                     break
-                elif err == "return":
+                elif err == "reply":
                     # return (recursively) from feed()
                     return None
                 elif err.startswith("jump2hook "):

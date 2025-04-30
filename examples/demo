@@ -1,0 +1,17 @@
+add chain preresolve
+	# trace every query with "warn" level
+	add rule preresolve verbose warn
+	# reply cached answer if exists
+	add rule preresolve cachecheck
+	add rule preresolve hasanswer reply
+
+add chain resolve
+	# if answer exists in /etc/hosts, use that
+	add rule resolve resolvefile /etc/hosts
+	# if qname is *.google.com, forward the request to 8.8.8.8 and wait for a reply
+	add rule resolve not hasanswer qname *.google.com forward 8.8.8.8
+	# if no answer, forward the request to 
+	add rule resolve not hasanswer forward 1.1.1.1
+
+add chain postresolve
+	add rule postresolve cache
