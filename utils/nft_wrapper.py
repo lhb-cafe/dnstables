@@ -67,7 +67,7 @@ class NftWrapper:
                     'family': family,
                     'table': table,
                     'name': map_name,
-                    'elem': [original_ip]
+                    'elem': [fake_ip]
                 }
             }
         }])

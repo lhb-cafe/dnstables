@@ -3,13 +3,13 @@ import time
 from utils.nft_wrapper import NftWrapper
 
 class FakeIP:
-    def __init__(self, fake_ip, real_ip = None, domains = None):
+    def __init__(self, fake_ip, real_ip = None, domains = set()):
         self.fake_ip = fake_ip
         self.real_ip = real_ip
         self.domains = domains
 
     def is_free(self):
-        return len(self.domains) > 0
+        return len(self.domains) == 0
 
     def is_mapped_to(self, domain):
         return domain in self.domains
@@ -75,5 +75,6 @@ class FakeIPPool:
         self.domain_to_fake_ip.pop(domain)
         fip.domains.remove(domain)
         if fip.is_free():
+            self.real_to_fake_ip.pop(fip.real_ip)
             self.nft.delete(fip.fake_ip)
             self.recycled_pool.append(fip.fake_ip)
