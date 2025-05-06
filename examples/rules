@@ -1,0 +1,25 @@
+add chain preresolve
+	# trace every query with "warn" level, except *.google.com and *.youtube.com, which will trace with "info" level
+	add rule preresolve verbose warn
+	add rule preresolve qname *.google.com or qname *.youtube.com verbose info
+	# reply cached answer if exists
+	add rule preresolve cachecheck
+	add rule preresolve hasanswer reply
+
+add chain resolve
+	# if answer exists in /etc/hosts, use that
+	add rule resolve resolvefile /etc/hosts
+	# if no answer, forward the request to 8.8.8.8 and wait for a reply
+	add rule resolve not hasanswer forward 8.8.8.8
+
+add chain postresolve
+	# for *.google.com or *.youtube.com, jump to "resolve_fakeip" chain
+	add rule postresolve qname *.google.com or qname *.youtube.com jump resolve_fakeip
+	# for everything else cache any answer and reply
+	add rule postresolve cache reply
+
+add chain resolve_fakeip
+	# reply fake ip in 198.19.0.0/16 for *.google.com
+	add rule resolve_fakeip qname *.google.com fakeip 198.19.0.0/16 cache reply
+	# reply fake ip in 198.20.0.0/16 for *.youtube.com
+	add rule resolve_fakeip qname *.youtube.com fakeip 198.20.0.0/16 cache reply
